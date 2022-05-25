@@ -13,6 +13,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import io.flutter.plugin.common.PluginRegistry
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -37,24 +38,25 @@ enum class ZipFileOperation { INCLUDE_ITEM, SKIP_ITEM, CANCEL }
  * FlutterArchivePlugin
  */
 class FlutterArchivePlugin : FlutterPlugin, MethodCallHandler {
-    private var pluginBinding: FlutterPlugin.FlutterPluginBinding? = null
+
     private var methodChannel: MethodChannel? = null
 
     companion object {
         private const val LOG_TAG = "FlutterArchivePlugin"
+
+        /**
+         * Plugin registration.
+         */
+        fun registerWith(registrar: PluginRegistry.Registrar) {
+            val instance = FlutterArchivePlugin()
+            instance.doOnAttachedToEngine(registrar.messenger())
+        }
     }
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         Log.d(LOG_TAG, "onAttachedToEngine - IN")
 
-        if (pluginBinding != null) {
-            Log.w(LOG_TAG, "onAttachedToEngine - already attached")
-        }
-
-        pluginBinding = binding
-
-        val messenger = pluginBinding?.binaryMessenger
-        doOnAttachedToEngine(messenger!!)
+        doOnAttachedToEngine(binding.binaryMessenger)
 
         Log.d(LOG_TAG, "onAttachedToEngine - OUT")
     }
@@ -76,10 +78,6 @@ class FlutterArchivePlugin : FlutterPlugin, MethodCallHandler {
     private fun doOnDetachedFromEngine() {
         Log.d(LOG_TAG, "doOnDetachedFromEngine - IN")
 
-        if (pluginBinding == null) {
-            Log.w(LOG_TAG, "doOnDetachedFromEngine - already detached")
-        }
-        pluginBinding = null
 
         methodChannel?.setMethodCallHandler(null)
         methodChannel = null
